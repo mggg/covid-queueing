@@ -1,13 +1,31 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Lora&display=swap');
+
+@font-face {
+    font-family: 'HK Grotesk';
+    font-style: bold;
+    font-weight: 600;
+    src: url(./HKGrotesk-Bold.ttf);
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@font-face {
+    font-family: 'HK Grotesk';
+    font-style: bold;
+    font-weight: 500;
+    src: url(./HKGrotesk-SemiBold.ttf);
+}
+
+
+@font-face {
+    font-family: 'HK Grotesk';
+    font-style: normal;
+    font-weight: 400;
+    src: url(./HKGrotesk-Regular.ttf);
+}
+
+
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
