@@ -6,7 +6,7 @@ import Form from 'react-bootstrap/Form'
 class ModelParam extends React.Component {
     render() {
         return (
-            <Form.Group as={Row} className="model-param" controlId={this.props.controlId}>
+            <Form.Group as={Row} key={this.props.controlId} className="model-param" controlId={this.props.controlId}>
                 <Col sm={4}></Col>
                 <Col sm={2}>
                     <Form.Control type="number"

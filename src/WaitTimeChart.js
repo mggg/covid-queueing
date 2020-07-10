@@ -1,261 +1,183 @@
-import React from 'react';
-import Container from 'react-bootstrap/Container'
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
-import Form from 'react-bootstrap/Form'
-import Button from 'react-bootstrap/Button'
-import FormControl from 'react-bootstrap/FormControl'
-import ModelParam from './ModelParam'
-import { VictoryChart, VictoryGroup, VictoryArea } from 'victory'
-import { simulateMdc, histPercentiles } from './queue'
+import React from 'react'
+import { VictoryChart, VictoryLabel, VictoryLegend, VictoryGroup, VictoryLine, VictoryArea } from 'victory'
+import { histPercentiles, smooth } from './queue'
 
-/* --- Start constants --- */
-/* Monte Carlo parameters */
-const N_RUNS = 200; // number of Monte Carlo simulations
-const RES = 1;      // Simulation resolution (minutes per timestep)
+/* Styling */
+const BLUE = '#4198c8'; // official MGGG blue
+const RED = '#d1352b';  // red from Districtr
+const GREEN = '#87ca3f'; // lightish green modified from Districtr
+const STROKE_WIDTH = 4;
 
-/* Day lengths */
-const DAYS = {
-    8: {
-        start: new Date(2020, 1, 1, 8, 0, 0),
-        'end': new Date(2020, 1, 1, 16, 0, 0)
-    }, // 8-hour day (8 a.m. – 4 p.m.)
-    10: {
-        'start': new Date(2020, 1, 1, 8, 0, 0),
-        'end': new Date(2020, 1, 1, 18, 0, 0)
-    }, // 10-hour day (8 a.m. – 6 p.m.)
-    12: {
-        'start': new Date(2020, 1, 1, 8, 0, 0),
-        'end': new Date(2020, 1, 1, 20, 0, 0)
-    }, // 12-hour day (8 a.m. – 8 p.m.)
-    14: {
-        'start': new Date(2020, 1, 1, 8, 0, 0),
-        'end': new Date(2020, 1, 1, 22, 0, 0)
-    } // 14-hour day (8 a.m. – 10 p.m.)
-};
-const DEFAULT_DAY = 12; // Use 12-hour day by default
-const MIN_TIME = new Date(Math.min.apply(Object.values(DAYS).map(x => x['start'])));
-/* Demand scenarios */
-const SCENARIOS = {
-    'Uniform demand': [
-        {'start': MIN_TIME, 'demand': 1}
-    ],
-    'Peak usage around mealtimes': [
-        // peak breakfast period: 8:30 a.m. – 9:30 a.m.
-        {'start': MIN_TIME, 'demand': 1},
-        {'start': new Date(2020, 1, 1, 8, 30, 0), 'demand': 5},
-        {'start': new Date(2020, 1, 1, 9, 30, 0), 'demand': 1},
-        // peak lunch period: 11:30 a.m. – 12:30 a.m.
-        {'start': new Date(2020, 1, 1, 11, 30, 0), 'demand': 5},
-        {'start': new Date(2020, 1, 1, 12, 30, 0), 'demand': 1},
-        // peak dinner period: 5:00 p.m. – 6:00 p.m.
-        {'start': new Date(2020, 1, 1, 17, 0, 0), 'demand': 5},
-        {'start': new Date(2020, 1, 1, 18, 0, 0), 'demand': 1},
-    ]
-};
-const DEFAULT_SCENARIO = 'Uniform demand';
-/* --- End constants --- */
+const PERCENTILES = [1, 5, 20, 50, 80, 95, 99];
+const BAND_ALPHAS = [0.2, 0.35, 0.52, 0.52, 0.35, 0.2];
+const SMOOTH_WINDOW = 15;
 
 class WaitTimeChart extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            numPeople: 5000,
-            numStudents: 4000,
-            numStaff: 1000,
-            numPeopleTestingStations: 10,
-            numStudentTestingStations: 8,
-            numStaffTestingStations: 2,
-            minutesPerTest: 5,
-            peopleScenario: DEFAULT_SCENARIO,
-            studentScenario: DEFAULT_SCENARIO,
-            staffScenario: DEFAULT_SCENARIO,
-            dayLength: DEFAULT_DAY,
-            separateStudentsStaff: false
-        };
-    }
-
-    /*
-     * generic `onChange` handler:
-     * https://medium.com/front-end-weekly/react-quick-tip-easy-data-
-     * binding-with-a-generic-onchange-handler-fb0254a7094e
-     */
-    onCheckChange = e => this.setState({ [e.target.name]: e.target.checked });
-    onParamChange = e => this.setState({ [e.target.controlId]: Math.round(e.target.value) });
-    onSelectChange = e => this.setState({ [e.target.controlId]: e.target.value });
-
-
-    updateChart() {
-        alert("ello");
-    }
-
-    scenarioOptions() {
-        let scenarios = Object.keys(SCENARIOS).sort().reverse();
-        return scenarios.map(s => {
-            return <option key={s} value={s}>{s}</option>;
-        });
+    bandsData(hists) {
+        let percentileBands = [];
+        let medianXY = [];
+        let offset = Math.floor(SMOOTH_WINDOW / 2);
+        if (hists !== undefined) {
+            let percentiles = hists.map(h => histPercentiles(h, PERCENTILES));
+            let percentilesSmoothed = Array(PERCENTILES.length);
+            for (let idx = 0; idx < PERCENTILES.length; idx++) {
+                let percentileData = percentiles.map(p => p[idx]);
+                let smoothed = smooth(percentileData, SMOOTH_WINDOW);
+                percentilesSmoothed[idx] = smoothed;
+                if (PERCENTILES[idx] === 50) {
+                    for (let ts = 0; ts < smoothed.length; ts++) {
+                        medianXY.push({'x': ts + offset, 'y': smoothed[ts]});
+                    }
+                }
+            }
+            for (let idx = 0; idx < BAND_ALPHAS.length; idx++) {
+                let y0 = percentilesSmoothed[idx];
+                let y = percentilesSmoothed[idx + 1];
+                let xy = Array(y.length);
+                for (let ts = 0; ts < y.length; ts++) {
+                    xy[ts] = {'x': ts + offset, 'y': y[ts], 'y0': y0[ts]};
+                }
+                percentileBands.push({'xy': xy, 'alpha': BAND_ALPHAS[idx]});
+            }
+        }
+        return {'median': medianXY, 'percentiles': percentileBands};
     }
 
     render() {
-        console.log(simulateMdc(Array(100).fill(30),
-                                this.state.numPeopleTestingStations,
-                                this.state.minutesPerTest,
-                                N_RUNS));
+        // FIXME: 😤😩 This is crying out to be replaced with a reusable 
+        // `WaitTimeLine` component that wraps the percentile calculations
+        // and the rendering of the error bands. However, it seems that
+        // Victory has some weird binding stuff that I don't entirely
+        // understand which makes custom components very fragile.
+        // This works for now but should be patched up if things
+        // get more complicated.
+        let peopleData, peopleMedian, peoplePercentiles;
+        let studentData, studentMedian, studentPercentiles;
+        let staffData, staffMedian, staffPercentiles;
+        if (this.props.separateStudentsStaff === true) {
+            studentData = this.bandsData(this.props.studentHists);
+            studentMedian = studentData['median'];
+            studentPercentiles = studentData['percentiles'];
+
+            staffData = this.bandsData(this.props.staffHists);
+            staffMedian = staffData['median'];
+            staffPercentiles = staffData['percentiles'];
+        } else {
+            peopleData = this.bandsData(this.props.peopleHists);
+            peopleMedian = peopleData['median'];
+            peoplePercentiles = peopleData['percentiles'];
+        }
 
         return (
-            <Container className="wait-time-interactive">
-                <div className="wait-time-chart">
-                   <VictoryChart width={800} height={400}>
-                        <VictoryGroup
-                          style={{
-                            data: { strokeWidth: 3, fillOpacity: 0.4 }
-                          }}
-                        >
-                          <VictoryArea
-                            style={{
-                              data: { fill: "cyan", stroke: "cyan" }
-                            }}
-                            data={[
-                              { x: 1, y: 2 },
-                              { x: 2, y: 3 },
-                              { x: 3, y: 5 },
-                              { x: 4, y: 4 },
-                              { x: 5, y: 7 }
-                            ]}
-                          />
-                          <VictoryArea
-                            style={{
-                              data: { fill: "magenta", stroke: "magenta" }
-                            }}
-                            data={[
-                              { x: 1, y: 3 },
-                              { x: 2, y: 2 },
-                              { x: 3, y: 6 },
-                              { x: 4, y: 2 },
-                              { x: 5, y: 6 }
-                            ]}
-                          />
-                        </VictoryGroup>
-                    </VictoryChart>
-                </div>
-
-                <div className="wait-time-params">
-                    <Form>
-                        <Form.Group as={Row} className="justify-content-center" controlId="separateStudentsStaff">
-                            <Col sm={4}>
-                                <Form.Check type="checkbox"
-                                            name="separateStudentsStaff"
-                                            label="Separate students and staff"
-                                            checked={this.state.separateStudentsStaff}
-                                            onChange={this.onCheckChange} />
-                            </Col>
-                        </Form.Group>
-                        {(() => {
-                            if (this.state.separateStudentsStaff) {
+            <VictoryChart width={600} height={250}>
+                {(() => {
+                    if (this.props.separateStudentsStaff === true) {
+                        return [(
+                            <VictoryGroup
+                              style={{
+                                data: { strokeWidth: 3.5 }
+                              }}
+                            >
+                              <VictoryLine
+                                style={{
+                                  data: { stroke: RED }
+                                }}
+                                data={studentMedian}
+                              />
+                            </VictoryGroup>
+                        ),
+                        studentPercentiles.map(xy => {
                                 return (
-                                    <>
-                                    <ModelParam controlId="numStudents"
-                                                defaultValue={this.state.numStudents}
-                                                onChange={this.onParamChange}
-                                                label="students" />
-                                    <ModelParam controlId="numStaff"
-                                                defaultValue={this.state.numStaff}
-                                                onChange={this.onParamChange}
-                                                label="staff" />
-                                    <ModelParam controlId="numStudentTestingStations"
-                                                defaultValue={this.state.numStudentTestingStations}
-                                                onChange={this.onParamChange}
-                                                label="student testing stations" />
-                                    <ModelParam controlId="numStaffTestingStations"
-                                                defaultValue={this.state.numStaffTestingStations}
-                                                onChange={this.onParamChange}
-                                                label="staff testing stations" />
-                                    </>
+                                    <VictoryGroup
+                                      style={{
+                                        data: { strokeWidth: 0, fillOpacity: xy['alpha'] }
+                                      }}
+                                    >
+                                      <VictoryArea
+                                        style={{
+                                          data: { fill: RED, stroke: RED }
+                                        }}
+                                        data={xy['xy']}
+                                      />
+                                    </VictoryGroup>
                                 );
-                            } else {
+                            }),
+                         (<VictoryGroup
+                              style={{
+                                data: { strokeWidth: STROKE_WIDTH }
+                              }}
+                            >
+                              <VictoryLine
+                                style={{
+                                  data: { stroke: GREEN }
+                                }}
+                                data={staffMedian}
+                              />
+                            </VictoryGroup>
+                        ),
+                        staffPercentiles.map(xy => {
                                 return (
-                                    <>
-                                    <ModelParam controlId="numPeople"
-                                                defaultValue={this.state.numStudents}
-                                                onChange={this.onParamChange}
-                                                label="people" />
-                                    <ModelParam controlId="numPeopleTestingStations"
-                                                defaultValue={this.state.numPeopleTestingStations}
-                                                onChange={this.onParamChange}
-                                                label="testing stations" />
-                                    </>
+                                    <VictoryGroup
+                                      style={{
+                                        data: { strokeWidth: 0, fillOpacity: xy['alpha'] }
+                                      }}
+                                    >
+                                      <VictoryArea
+                                        style={{
+                                          data: { fill: GREEN, stroke: GREEN }
+                                        }}
+                                        data={xy['xy']}
+                                      />
+                                    </VictoryGroup>
                                 );
-                            }
-                        })()}
+                            }),
+                            (<VictoryLegend x={50} y={10}
+                              orientation="horizontal"
+                              gutter={20}
+                              style={{ border: { stroke: "black" } }}
+                              colorScale={[ "navy", "blue", "cyan" ]}
+                              data={[
+                                { name: "One" }, { name: "Two" }, { name: "Three" }
+                              ]}
+                            />)
+                        ]
 
-                        <ModelParam controlId="minutesPerTest"
-                                    defaultValue={this.state.minutesPerTest}
-                                    onChange={this.onParamChange}
-                                    label="minutes per test" />
-
-
-                        {(() => {
-                            if (this.state.separateStudentsStaff) {
-                                // TODO: turn this into a proper component if it gets reused again
+                    } else {
+                        return [(
+                            <VictoryGroup
+                              style={{
+                                data: { strokeWidth: STROKE_WIDTH }
+                              }}
+                            >
+                              <VictoryLine
+                                style={{
+                                  data: { stroke: BLUE }
+                                }}
+                                data={peopleMedian}
+                              />
+                            </VictoryGroup>
+                        ),
+                        peoplePercentiles.map(xy => {
                                 return (
-                                    <>
-                                    <Form.Group as={Row} controlId="studentScenario" onChange={this.onSelectChange}>
-                                        <Col sm={4} />
-                                        <Col sm={4}>
-                                            <FormControl as="select" defaultValue={this.state.studentScenario}>
-                                                {this.scenarioOptions()}
-                                            </FormControl>
-                                        </Col>
-                                        <Form.Label column sm={3}>(students)</Form.Label>
-                                    </Form.Group>
-                                    <Form.Group as={Row} controlId="staffScenario">
-                                        <Col sm={4} />
-                                        <Col sm={4}>
-                                            <FormControl as="select" defaultValue={this.state.staffScenario}>
-                                                {this.scenarioOptions()}
-                                            </FormControl>
-                                        </Col>
-                                        <Form.Label column sm={3}>(staff)</Form.Label>
-                                    </Form.Group>
-                                    </>
+                                    <VictoryGroup
+                                      style={{
+                                        data: { strokeWidth: 0, fillOpacity: xy['alpha'] }
+                                      }}
+                                    >
+                                      <VictoryArea
+                                        style={{
+                                          data: { fill: BLUE, stroke: BLUE }
+                                        }}
+                                        data={xy['xy']}
+                                      />
+                                    </VictoryGroup>
                                 );
-                            } else {
-                                return (
-                                    <Form.Group as={Row} className="justify-content-center" controlId="peopleScenario">
-                                        <Col sm={4}>
-                                            <FormControl as="select" defaultValue={this.state.peopleScenario}>
-                                                {this.scenarioOptions()}
-                                            </FormControl>
-                                        </Col>
-                                    </Form.Group>
-                                );
-                            }
-                        })()}
-
-                        <Form.Group as={Row} className="justify-content-center" controlId="dayLength">
-                            <Col sm={4}>
-                                <FormControl as="select" defaultValue={this.state.dayLength}>
-                                    {(() => {
-                                        let hours = Object.keys(DAYS).map(s => parseInt(s));
-                                        hours = hours.sort((a, b) => a - b);
-                                        return hours.map(hr => {
-                                            return <option key={hr} value={hr}>{hr}-hour day</option>;
-                                        });
-                                    })()}
-                                </FormControl>
-                            </Col>
-                        </Form.Group>
-                        <Form.Group as={Row} className="justify-content-center" controlId="simulateButton">
-                            <Col sm={4}>
-                                <Button variant="primary"
-                                        type="submit"
-                                        className="simulate-button"
-                                        onClick={this.updateChart}>Simulate</Button>
-                            </Col>
-                        </Form.Group>
-                    </Form>
-                </div>
-            </Container>
+                            })]
+                        }
+                })()}
+                <VictoryLabel x={355} y={388} text="Arrival time" />
+                <VictoryLabel x={5} y={180} angle={270} text="Wait time (minutes)" />
+            </VictoryChart>
         );
     }
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import logo from './logo.svg'
 import Container from 'react-bootstrap/Container'
 import Jumbotron from 'react-bootstrap/Jumbotron'
-import WaitTimeChart from './WaitTimeChart'
+import WaitTimeInteractive from './WaitTimeInteractive'
 import './App.css';
 
 class App extends React.Component {
@@ -26,13 +26,14 @@ class App extends React.Component {
                             <Container>
                                 <div className="lead-text">
                                     <h1>Queueing for Campus Coronavirus Testing</h1>
-                                    <p>or how to avoid long lines</p>
+                                    <h2>or how to avoid long lines</h2>
+                                    <p>Short explainer text here</p>
                                 </div>
                                 <div className="model-dropdown">
                                 </div>
                             </Container>
                         </Jumbotron>
-                        <WaitTimeChart />
+                        <WaitTimeInteractive />
                     </section>
                     <hr />
 
@@ -54,7 +55,7 @@ class App extends React.Component {
                 </main>
                 
                 <footer className='footer mt-auto py-3'>
-                    <p>This is a summer 2020 project of <a href="https://mggg.org">MGGG Redistricting Lab</a> at Tufts University&apos;s <a href="https://tischcollege.tufts.edu/">Jonathan M. Tisch College of Civic Life</a> with assistance from <a href="https://pjrule.github.io/">Parker J. Rule</a>. We are grateful for the major support of the National Science Foundation through the Convergence Accelerator award OIA-1937095, Network Science of Census Data. (TODO: more recent grant here!)</p>
+                    <p>This is a summer 2020 project of <a href="https://mggg.org">MGGG Redistricting Lab</a> at Tufts University&apos;s <a href="https://tischcollege.tufts.edu/">Jonathan M. Tisch College of Civic Life</a> with assistance from <a href="https://pjrule.github.io/">Parker J. Rule</a>. We are grateful for the major support of the National Science Foundation through the RAPID award OIA-2029788, Campus Coronavirus Response.</p>
                 </footer>
             </div>
         );

@@ -15,26 +15,62 @@ function poisson(lambda) {
     return k - 1;
 }
 
+export const smooth = function(signal, win) {
+    let offset = Math.floor(win / 2);
+    let smoothLength = signal.length - (2 * offset);
+    let smoothed = Array(smoothLength);
+    for (let ts = 0; ts < smoothLength; ts++) {
+        // TODO: handle null values if necessary
+        let sub = signal.slice(ts, ts + (2 * offset) + 1);
+        smoothed[ts] = sub.reduce((a, b) => parseInt(a) + parseInt(b)) / win;
+    }
+    return smoothed;
+}
+
+export const normalizedLambdas = function(numPeople, demandSchedule, startTime, endTime, res) {
+    let resMs = 60 * 1000 * res;
+    let steps = Math.ceil((endTime - startTime) / resMs);
+    let currTime = startTime;
+    let demand = Array(steps);
+    let scheduleIdx = 0;
+    for (let ts = 0; ts < steps; ts++) {
+        while(scheduleIdx < demandSchedule.length - 1 && 
+              demandSchedule[scheduleIdx + 1]['start'] <= currTime) {
+            scheduleIdx++;
+        }
+        demand[ts] = demandSchedule[scheduleIdx]['demand']
+        currTime = new Date(new Date(currTime).getTime() + resMs);
+    }
+    let totalDemand = demand.reduce((a, b) => a + b);
+    let scale = numPeople / totalDemand;
+    let normalized = demand.map(d => d * scale);
+    return normalized;
+}
+
 export const histPercentiles = function(hist, p) {
     /**
      * Retrieves the values at (approximately) the specified percentiles
      * in a histogram.
      */
+    if (Object.keys(hist).length === 0) {
+        return null; // an empty histogram has no percentiles
+    } 
+
     p.sort((a, b) => a - b);
     let results = Array(p.length).fill(0);
     let histKeys = Object.keys(hist).sort((a, b) => a - b);
-    let histIdx = 1;
+    let histIdx = 0;
     let binLoRank = 0;
-    let binHiRank = hist[histKeys] - 1;
+    let binHiRank = hist[histKeys[0]] - 1;
     let histSize = Object.values(hist).reduce((a, b) => a + b);
     for (let idx = 0; idx < p.length; idx++) {
         let nearestRank = Math.max(0, Math.ceil(histSize * p[idx] / 100) - 1);
-        while (binLoRank < nearestRank && histIdx < hist.length) {
+        while (binHiRank < nearestRank && histIdx < histKeys.length - 1) {
             binLoRank = binHiRank + 1;
             binHiRank = binLoRank + hist[histKeys[histIdx]] - 1;
             histIdx++;
         }
-        results[idx] = hist[histIdx];
+        results[idx] = histKeys[histIdx];
     }
     return results;
 }
@@ -53,16 +89,16 @@ export const simulateMdc = function(lambdas, numStations, stepsPerTest, runs) {
         let arrivals = lambdas.map(poisson);
         let arrivalTs = 0;
         let stations = Array(numStations).fill(-1);
-        for (let serviceTs = 0; serviceTs < steps && arrivalTs < steps; serviceTs++) {
+        for (let serviceTs = 0; arrivalTs < steps; serviceTs++) {
             for (let s = 0; s < numStations; s++) {
                 // Fill as many stations as possible at each timestep.
-                if (arrivals[arrivalTs] === 0) {
+                while (arrivals[arrivalTs] === 0 && arrivalTs < steps) {
                     // Once all people who have arrived at a particular timestep
                     // have been serviced, move to the people who arrived in the
                     // next timestep.
                     arrivalTs++;
                 }
-                if (arrivalTs > serviceTs) {
+                if (arrivalTs > serviceTs || arrivalTs >= steps) {
                     // Can't fulfill demand before it shows up.
                     break;
                 }
@@ -71,15 +107,16 @@ export const simulateMdc = function(lambdas, numStations, stepsPerTest, runs) {
                     // Add a new person.
                     stations[s] = serviceTs + stepsPerTest;
                     let waitTime = serviceTs - arrivalTs;
-                    if (waitTime in waitTimeHists[serviceTs]) {
-                        waitTimeHists[serviceTs][waitTime] += 1;
+                    if (waitTime in waitTimeHists[arrivalTs]) {
+                        waitTimeHists[arrivalTs][waitTime] += 1;
                     } else {
-                        waitTimeHists[serviceTs][waitTime] = 1;
+                        waitTimeHists[arrivalTs][waitTime] = 1;
                     }
                     arrivals[arrivalTs]--;
                 }
             }
         }
     }
+    console.log(waitTimeHists);
     return waitTimeHists;
 }

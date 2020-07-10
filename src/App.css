@@ -7,7 +7,7 @@
 /*** Header ***/
 .lead {
     background-color: #f9f9f9;
-    padding: 4rem 0 0.75rem 0;
+    padding: 3rem 0 0 0;
 }
 
 .lead h1 {
@@ -15,9 +15,14 @@
     text-align: center;
 }
 
+.lead h2 {
+    font-weight: 500;
+    text-align: center;
+    font-size: 1.3em;
+}
+
 .lead p {
     text-align: center;
-    font-size: 1.2em;
 }
 
 /* modified from main MGGG site */
@@ -34,6 +39,7 @@
 
 /*** Interactive ***/
 .wait-time-params {
+    padding-top: 2rem;
     margin: 0 auto;
 }
 
