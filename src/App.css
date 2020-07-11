@@ -38,6 +38,11 @@
 }
 
 /*** Interactive ***/
+.wait-time-chart .alert {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
 .wait-time-params {
     padding-top: 2rem;
     margin: 0 auto;

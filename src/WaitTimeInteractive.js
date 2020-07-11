@@ -40,24 +40,30 @@ const DEFAULT_DAY = 12; // Use 12-hour day by default
 const MIN_TIME = new Date(2020, 1, 1, 8, 0, 0);
 
 /* Demand scenarios */
+function mealtimes(increase) {
+    return [
+        // peak breakfast period: 8:30 a.m. – 9:30 a.m.
+        {'start': MIN_TIME, 'demand': 1},
+        {'start': new Date(2020, 1, 1, 8, 30, 0), 'demand': increase},
+        {'start': new Date(2020, 1, 1, 9, 30, 0), 'demand': 1},
+        // peak lunch period: 11:30 a.m. – 12:30 a.m.
+        {'start': new Date(2020, 1, 1, 11, 30, 0), 'demand': increase},
+        {'start': new Date(2020, 1, 1, 12, 30, 0), 'demand': 1},
+        // peak dinner period: 5:00 p.m. – 6:00 p.m.
+        {'start': new Date(2020, 1, 1, 17, 0, 0), 'demand': increase},
+        {'start': new Date(2020, 1, 1, 18, 0, 0), 'demand': 1},
+    ]
+}
+
 const SCENARIOS = {
     'Uniform demand': [
         {'start': MIN_TIME, 'demand': 1}
     ],
-    'Peak usage around mealtimes': [
-        // peak breakfast period: 8:30 a.m. – 9:30 a.m.
-        {'start': MIN_TIME, 'demand': 1},
-        {'start': new Date(2020, 1, 1, 8, 30, 0), 'demand': 5},
-        {'start': new Date(2020, 1, 1, 9, 30, 0), 'demand': 1},
-        // peak lunch period: 11:30 a.m. – 12:30 a.m.
-        {'start': new Date(2020, 1, 1, 11, 30, 0), 'demand': 5},
-        {'start': new Date(2020, 1, 1, 12, 30, 0), 'demand': 1},
-        // peak dinner period: 5:00 p.m. – 6:00 p.m.
-        {'start': new Date(2020, 1, 1, 17, 0, 0), 'demand': 5},
-        {'start': new Date(2020, 1, 1, 18, 0, 0), 'demand': 1},
-   ]
-}
-const DEFAULT_SCENARIO = 'Peak usage around mealtimes';
+    'Peaks around mealtimes (3x increase)': mealtimes(3),
+    'Peaks around mealtimes (5x increase)': mealtimes(5),
+    'Peaks around mealtimes (7x increase)': mealtimes(7),
+};
+const DEFAULT_SCENARIO = 'Peaks around mealtimes (5x increase)';
 /* --- End constants --- */
 
 class WaitTimeInteractive extends React.Component {
