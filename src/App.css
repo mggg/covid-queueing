@@ -62,13 +62,14 @@
 
 .simulate-button {
     width: 100%;
-    background-color: #3a89b8;
-    border: 1px solid #3a89b8;
+    /*background-color: #3a89b8;
+    border: 1px solid #3a89b8;*/
 }
 
+/*
 .simulate-button:hover, .simulate-button:focus, .simulate-button:active {
     background-color: #2b6b98;
-}
+}*/
 
 /*** Info text ***/
 .info {
