@@ -40,7 +40,7 @@ class App extends React.Component {
                     <section className="info">
                         <h2>How should I use this?</h2>
                         <p>The efficiency of a surveillance testing operation depends both on planning choices and on some behavioral factors that are hard to predict.  This tool lets you experiment with different parameters of demand and operational planning, then performs simulations of participant arrival at testing facilities to predict wait times.  The underlying mathematical model comes from queueing theory, as explained below.</p>
-                        <p>Planners should use this tool separately for each campus. If testing sites on the same campus are likely to have different levels of demand, the tool should be used separately for each site.</p>
+                        <p>Use this tool separately for each campus of a university. If testing sites on the same campus are likely to have different levels of demand, consider each site separately.</p>
                         <p>The output shows the wait time over the course of the day.  The bold line is the median (50<sup>th</sup> percentile) of 200 simulations, and the shaded bands show the 20<sup>th</sup>-80<sup>th</sup>, 5<sup>th</sup>-95<sup>th</sup>, and 1<sup>st</sup>-99<sup>th</sup> percenties around the median.</p>
                         <p>We welcome feedback and suggestions. To discuss this model or any of MGGG&apos;s <a href="https://mggg.github.io/covid-landing-page/index.html">other coronavirus response projects</a>, please reach out at <a href="mailto:contact@mggg.org">contact@mggg.org</a> or to PI Moon Duchin directly at <a href="mailto:Moon.Duchin@tufts.edu">Moon.Duchin@tufts.edu</a>.</p>
                     </section>
