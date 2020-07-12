@@ -114,6 +114,10 @@
     }
 }
 
+.info a {
+    color: #006b9c;
+}
+
 
 /*** Footer ***/
 footer {
