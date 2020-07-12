@@ -1,27 +1,27 @@
 {
   "files": {
-    "main.css": "/covid-queueing/static/css/main.32bbe62d.chunk.css",
-    "main.js": "/covid-queueing/static/js/main.1ed76c6a.chunk.js",
-    "main.js.map": "/covid-queueing/static/js/main.1ed76c6a.chunk.js.map",
+    "main.css": "/covid-queueing/static/css/main.cdb326cf.chunk.css",
+    "main.js": "/covid-queueing/static/js/main.01ce8dc2.chunk.js",
+    "main.js.map": "/covid-queueing/static/js/main.01ce8dc2.chunk.js.map",
     "runtime-main.js": "/covid-queueing/static/js/runtime-main.85edf630.js",
     "runtime-main.js.map": "/covid-queueing/static/js/runtime-main.85edf630.js.map",
     "static/css/2.af3c1da9.chunk.css": "/covid-queueing/static/css/2.af3c1da9.chunk.css",
-    "static/js/2.42b2dfe3.chunk.js": "/covid-queueing/static/js/2.42b2dfe3.chunk.js",
-    "static/js/2.42b2dfe3.chunk.js.map": "/covid-queueing/static/js/2.42b2dfe3.chunk.js.map",
+    "static/js/2.64cbddef.chunk.js": "/covid-queueing/static/js/2.64cbddef.chunk.js",
+    "static/js/2.64cbddef.chunk.js.map": "/covid-queueing/static/js/2.64cbddef.chunk.js.map",
     "index.html": "/covid-queueing/index.html",
-    "precache-manifest.9eb34a22663d6b874ff33b323af79bb4.js": "/covid-queueing/precache-manifest.9eb34a22663d6b874ff33b323af79bb4.js",
+    "precache-manifest.3dc4851c4489e6231658733b2d789466.js": "/covid-queueing/precache-manifest.3dc4851c4489e6231658733b2d789466.js",
     "service-worker.js": "/covid-queueing/service-worker.js",
     "static/css/2.af3c1da9.chunk.css.map": "/covid-queueing/static/css/2.af3c1da9.chunk.css.map",
-    "static/css/main.32bbe62d.chunk.css.map": "/covid-queueing/static/css/main.32bbe62d.chunk.css.map",
-    "static/js/2.42b2dfe3.chunk.js.LICENSE.txt": "/covid-queueing/static/js/2.42b2dfe3.chunk.js.LICENSE.txt",
+    "static/css/main.cdb326cf.chunk.css.map": "/covid-queueing/static/css/main.cdb326cf.chunk.css.map",
+    "static/js/2.64cbddef.chunk.js.LICENSE.txt": "/covid-queueing/static/js/2.64cbddef.chunk.js.LICENSE.txt",
     "static/media/index.css": "/covid-queueing/static/media/HKGrotesk-SemiBold.88b65bd1.ttf",
     "static/media/logo.svg": "/covid-queueing/static/media/logo.5691b2a9.svg"
   },
   "entrypoints": [
     "static/js/runtime-main.85edf630.js",
     "static/css/2.af3c1da9.chunk.css",
-    "static/js/2.42b2dfe3.chunk.js",
-    "static/css/main.32bbe62d.chunk.css",
-    "static/js/main.1ed76c6a.chunk.js"
+    "static/js/2.64cbddef.chunk.js",
+    "static/css/main.cdb326cf.chunk.css",
+    "static/js/main.01ce8dc2.chunk.js"
   ]
 }
