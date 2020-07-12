@@ -18,7 +18,7 @@
 .lead h2 {
     font-weight: 500;
     text-align: center;
-    font-size: 1.3em;
+    font-size: 1.25em;
 }
 
 .lead p {
@@ -41,10 +41,11 @@
 .wait-time-chart .alert {
     max-width: 800px;
     margin: 0 auto;
+    margin-top: 1rem;
 }
 
 .wait-time-params {
-    padding-top: 2rem;
+    padding-top: 1rem;
     margin: 0 auto;
 }
 
@@ -60,10 +61,19 @@
     font-weight: 400;
 }
 
+.demand-label, .ops-label {
+    color: #444;
+    font-weight: 600;
+}
+
 .simulate-button {
     width: 100%;
     /*background-color: #3a89b8;
     border: 1px solid #3a89b8;*/
+}
+
+.invalid-feedback {
+    display: block;
 }
 
 /*

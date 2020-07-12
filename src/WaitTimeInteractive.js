@@ -1,14 +1,16 @@
-import React from 'react'
-import Container from 'react-bootstrap/Container'
-import Row from 'react-bootstrap/Row'
-import Col from 'react-bootstrap/Col'
-import Form from 'react-bootstrap/Form'
-import Button from 'react-bootstrap/Button'
-import ProgressBar from 'react-bootstrap/ProgressBar'
-import FormControl from 'react-bootstrap/FormControl'
-import ModelParam from './ModelParam'
-import WaitTimeChart from './WaitTimeChart'
-import { simulateMdc, normalizedLambdas } from './queue'
+import React from 'react';
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
+import Form from 'react-bootstrap/Form';
+import Button from 'react-bootstrap/Button';
+import ProgressBar from 'react-bootstrap/ProgressBar';
+import FormControl from 'react-bootstrap/FormControl';
+import { Formik, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
+import ModelParam from './ModelParam';
+import WaitTimeChart from './WaitTimeChart';
+import { simulateMdc, normalizedLambdas } from './queue';
 
 /* --- Start constants --- */
 /* Monte Carlo parameters */
@@ -59,17 +61,56 @@ const SCENARIOS = {
     'Uniform demand': [
         {'start': MIN_TIME, 'demand': 1}
     ],
-    'Peaks around mealtimes (3x increase)': mealtimes(3),
-    'Peaks around mealtimes (5x increase)': mealtimes(5),
-    'Peaks around mealtimes (7x increase)': mealtimes(7),
+    'Mealtime rush hours (3x increase)': mealtimes(3),
+    'Mealtime rush hours (5x increase)': mealtimes(5),
+    'Mealtime rush hours (7x increase)': mealtimes(7),
 };
-const DEFAULT_SCENARIO = 'Peaks around mealtimes (5x increase)';
+const DEFAULT_SCENARIO = 'Mealtime rush hours (3x increase)';
 /* --- End constants --- */
+
+const ParamSchema = Yup.object().shape({
+    numStudents: Yup.number()
+            .min(0, "Number of students must be positive.")
+            .max(20000, "Only 20,000 students allowed per day.")
+            .integer("Number of students must be an integer.")
+            .required("Number of students is required."),
+    numStaff: Yup.number()
+            .min(0, "Number of staff members must be positive.")
+            .max(20000, "Only 20,000 staff members allowed per day.")
+            .integer("Number of staff members must be an integer.")
+            .required("Number of staff members is required."),
+    numPeople: Yup.number()
+            .min(0, "Number of people must be positive.")
+            .max(40000, "Only 40,000 people allowed per day.")
+            .integer("Number of people must be an integer.")
+            .required("Number of people is required."),
+    numStudentTestingStations: Yup.number()
+            .min(1, "Must have at least one student testing line.")
+            .max(500, "Only 500 student testing lines allowed.")
+            .integer("Number of student testing lines must be an integer.")
+            .required("Number of student testing lines is required."),
+    numStaffTestingStations: Yup.number()
+            .min(1, "Must have at least one staff testing line.")
+            .max(500, "Only 500 staff testing lines allowed.")
+            .integer("Number of staff testing lines must be an integer.")
+            .required("Number of staff testing lines is required."),
+    numPeopleTestingStations: Yup.number()
+            .min(1, "Must have at least one testing line.")
+            .max(1000, "Only 1,000 testing lines allowed.")
+            .integer("Number of testing lines must be an integer.")
+            .required("Number of testing lines is required."),
+    minutesPerTest: Yup.number()
+            .min(1, "A test should take at least one minute.")
+            .max(30, "A test should take at most 30 minutes.")
+            .round()
+            .required("Must specify test length.")
+});
 
 class WaitTimeInteractive extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            // TODO: remove (don't duplicate!)
             numPeople: 1500,
             numStudents: 1200,
             numStaff: 300,
@@ -82,12 +123,13 @@ class WaitTimeInteractive extends React.Component {
             staffScenario: DEFAULT_SCENARIO,
             dayLength: DEFAULT_DAY,
             separateStudentsStaff: false,
-            simRunning: false
+            simRunning: false,
         };
         this.updateChart = this.updateChart.bind(this);
         this.onSeparationChange = this.onSeparationChange.bind(this);
         this.onParamChange = this.onParamChange.bind(this);
         this.onSelectChange = this.onSelectChange.bind(this);
+        this.handleFormSubmit = this.handleFormSubmit.bind(this);
     }
 
     /*
@@ -108,8 +150,6 @@ class WaitTimeInteractive extends React.Component {
     }
 
     onParamChange(e)  {
-        console.log("id:", e.target.id);
-        console.log("value:", e.target.value);
         this.setState({ [e.target.id]: e.target.value });
     }
 
@@ -121,33 +161,46 @@ class WaitTimeInteractive extends React.Component {
         this.updateChart();
     }
 
-    updateChart() {
-        this.setState({ 'simRunning': true });
-        let start = DAYS[this.state.dayLength]['start'];
-        let end = DAYS[this.state.dayLength]['end'];
-        let testLength = this.state.minutesPerTest;
-        if (this.state.separateStudentsStaff === true) {
-            let nStudents = parseInt(this.state.numStudents);
-            let nStaff = parseInt(this.state.numStaff);
-            let scStudents = SCENARIOS[this.state.studentScenario];
-            let scStaff = SCENARIOS[this.state.staffScenario];
-            let nStudentStations = parseInt(this.state.numStudentTestingStations);
-            let nStaffStations = parseInt(this.state.numStaffTestingStations);
+    handleFormSubmit(values, actions) {
+        // TODO: The progress bar still doesn't show up. :(
+        actions.setSubmitting(true);
+        this.setState({...values, 'simRunning': true}, () => {
+            this.updateChart().then(() => {
+                this.setState({'simRunning': false});
+            });
+        });
+        actions.setSubmitting(false);
+    }
 
-            let studentLambdas = normalizedLambdas(nStudents, scStudents, start, end, 1);
-            let staffLambdas = normalizedLambdas(nStaff, scStaff, start, end, 1);
-            let studentHists = simulateMdc(studentLambdas, nStudentStations, testLength, N_RUNS);
-            let staffHists = simulateMdc(staffLambdas, nStaffStations, testLength, N_RUNS);
-            this.setState({'studentHists': studentHists, 'staffHists': staffHists});
-        } else {
-            let nPeople = parseInt(this.state.numPeople);
-            let nPeopleStations = parseInt(this.state.numPeopleTestingStations);
-            let scPeople = SCENARIOS[this.state.peopleScenario];
-            let peopleLambdas = normalizedLambdas(nPeople, scPeople, start, end, 1);
-            let peopleHists = simulateMdc(peopleLambdas, nPeopleStations, testLength, N_RUNS);
-            this.setState({'peopleHists': peopleHists});
-        }
-        this.setState({'startTime': start, 'endTime': end, 'simRunning': false});
+    updateChart() {
+        return new Promise((resolve, reject) => {
+            let start = DAYS[this.state.dayLength]['start'];
+            let end = DAYS[this.state.dayLength]['end'];
+            let testLength = parseInt(this.state.minutesPerTest);
+            if (this.state.separateStudentsStaff === true) {
+                let nStudents = parseInt(this.state.numStudents);
+                let nStaff = parseInt(this.state.numStaff);
+                let scStudents = SCENARIOS[this.state.studentScenario];
+                let scStaff = SCENARIOS[this.state.staffScenario];
+                let nStudentStations = parseInt(this.state.numStudentTestingStations);
+                let nStaffStations = parseInt(this.state.numStaffTestingStations);
+
+                let studentLambdas = normalizedLambdas(nStudents, scStudents, start, end, 1);
+                let staffLambdas = normalizedLambdas(nStaff, scStaff, start, end, 1);
+                let studentHists = simulateMdc(studentLambdas, nStudentStations, testLength, N_RUNS);
+                let staffHists = simulateMdc(staffLambdas, nStaffStations, testLength, N_RUNS);
+                this.setState({'studentHists': studentHists, 'staffHists': staffHists});
+            } else {
+                let nPeople = parseInt(this.state.numPeople);
+                let nPeopleStations = parseInt(this.state.numPeopleTestingStations);
+                let scPeople = SCENARIOS[this.state.peopleScenario];
+                let peopleLambdas = normalizedLambdas(nPeople, scPeople, start, end, 1);
+                let peopleHists = simulateMdc(peopleLambdas, nPeopleStations, testLength, N_RUNS);
+                this.setState({'peopleHists': peopleHists});
+            }
+            this.setState({'startTime': start, 'endTime': end});
+            resolve();
+        });
     }
 
     scenarioOptions() {
@@ -182,132 +235,179 @@ class WaitTimeInteractive extends React.Component {
                     })()}
                 </div>
                 <div className="wait-time-params">
-                    <Form>
-                        <Form.Group as={Row} className="justify-content-center" controlId="separateStudentsStaff">
-                            <Col sm={4}>
-                                <Form.Check type="checkbox"
-                                            name="separateStudentsStaff"
-                                            label="Separate students and staff"
-                                            checked={this.state.separateStudentsStaff}
-                                            onChange={this.onSeparationChange} />
-                            </Col>
-                        </Form.Group>
-                        {(() => {
-                            if (this.state.separateStudentsStaff) {
-                                return (
-                                    <>
-                                    <ModelParam controlId="numStudents"
-                                                defaultValue={this.state.numStudents}
-                                                onChange={this.onParamChange}
-                                                label="students per day" />
-                                    <ModelParam controlId="numStaff"
-                                                defaultValue={this.state.numStaff}
-                                                onChange={this.onParamChange}
-                                                label="staff per day" />
-                                    <ModelParam controlId="numStudentTestingStations"
-                                                defaultValue={this.state.numStudentTestingStations}
-                                                onChange={this.onParamChange}
-                                                label="student testing lines" />
-                                    <ModelParam controlId="numStaffTestingStations"
-                                                defaultValue={this.state.numStaffTestingStations}
-                                                onChange={this.onParamChange}
-                                                label="staff testing lines" />
-                                    </>
-                                );
-                            } else {
-                                return (
-                                    <>
-                                    <ModelParam controlId="numPeople"
-                                                defaultValue={this.state.numPeople}
-                                                onChange={this.onParamChange}
-                                                label="people per day" />
-                                    <ModelParam controlId="numPeopleTestingStations"
-                                                defaultValue={this.state.numPeopleTestingStations}
-                                                onChange={this.onParamChange}
-                                                label="testing lines" />
-                                    </>
-                                );
-                            }
-                        })()}
+                    <Formik validationSchema={ParamSchema}
+                            initialValues={{
+                                numPeople: 1500,
+                                numStudents: 1200,
+                                numStaff: 300,
+                                numPeopleTestingStations: 30,
+                                numStudentTestingStations: 22,
+                                numStaffTestingStations: 8,
+                                minutesPerTest: 8
+                            }}
+                            onSubmit={this.handleFormSubmit}>
+                        {({
+                            handleSubmit,
+                            handleChange,
+                            values,
+                            touched,
+                            isValid,
+                            errors,
+                            isSubmitting
+                        }) => (
+                        <Form noValidate onSubmit={handleSubmit}>
+                            <Form.Group as={Row} className="justify-content-center" controlId="separateStudentsStaff">
+                                <Col md={4}>
+                                    <Form.Check type="checkbox"
+                                                name="separateStudentsStaff"
+                                                label="Separate students and staff"
+                                                checked={this.state.separateStudentsStaff}
+                                                onChange={this.onSeparationChange} />
+                                </Col>
+                            </Form.Group>
+                            {(() => {
+                                if (this.state.separateStudentsStaff) {
+                                    return (
+                                        <>
+                                        <Row>
+                                            <Col md={4} />
+                                            <Col md={4} className="demand-label">
+                                                <label>Students</label>
+                                            </Col>
+                                        </Row>
+                                        <ModelParam controlId="numStudents"
+                                                    value={values.numStudents}
+                                                    onChange={handleChange}
+                                                    label="per day"
+                                                    errors={errors.numStudents}
+                                        />
+                                        <ModelParam controlId="numStudentTestingStations"
+                                                    value={values.numStudentTestingStations}
+                                                    onChange={handleChange}
+                                                    label="testing lines"
+                                                    errors={errors.numStudentTestingStations}
+                                        />
+                                        <Form.Group as={Row} controlId="studentScenario">
+                                            <Col md={4} />
+                                            <Col md={4}>
+                                                <FormControl as="select"
+                                                             key="studentScenario"
+                                                             defaultValue={this.state.studentScenario}
+                                                             onChange={this.onSelectChange}>
+                                                    {this.scenarioOptions()}
+                                                </FormControl>
+                                            </Col>
+                                        </Form.Group>
 
-                        <ModelParam controlId="minutesPerTest"
-                                    defaultValue={this.state.minutesPerTest}
-                                    onChange={this.onParamChange}
-                                    label="minutes per test" />
+                                        <Row>
+                                            <Col md={4} />
+                                            <Col md={4} className="demand-label">
+                                                <label>Staff</label>
+                                            </Col>
+                                        </Row>
+                                        <ModelParam controlId="numStaff"
+                                                    value={values.numStaff}
+                                                    onChange={handleChange}
+                                                    label="per day"
+                                                    errors={errors.numStaff}
+                                        />
+                                        <ModelParam controlId="numStaffTestingStations"
+                                                    value={values.numStaffTestingStations}
+                                                    onChange={handleChange}
+                                                    label="testing lines"
+                                                    errors={errors.numStaffTestingStations}
+                                        />
+                                        <Form.Group as={Row} controlId="staffScenario">
+                                            <Col md={4} />
+                                            <Col md={4}>
+                                                <FormControl as="select"
+                                                             key="staffScenario"
+                                                             defaultValue={this.state.staffScenario}
+                                                             onChange={this.onSelectChange}>
+                                                    {this.scenarioOptions()}
+                                                </FormControl>
+                                            </Col>
+                                        </Form.Group>
+                                        </>
+                                    );
+                                } else {
+                                    return (
+                                        <>
+                                        <Row>
+                                            <Col md={4} />
+                                            <Col md={4} className="demand-label">
+                                                <label>Demand</label>
+                                            </Col>
+                                        </Row>
+                                        <ModelParam controlId="numPeople"
+                                                    value={values.numPeople}
+                                                    onChange={handleChange}
+                                                    label="people per day"
+                                                    errors={errors.numPeople}
+                                        />
+                                        <ModelParam controlId="numPeopleTestingStations"
+                                                    value={values.numPeopleTestingStations}
+                                                    onChange={handleChange}
+                                                    label="testing lines"
+                                                    errors={errors.numPeopleTestingStations}
+                                        />
+                                        <Form.Group as={Row} className="justify-content-center" controlId="peopleScenario">
+                                            <Col md={4}>
+                                                <FormControl as="select"
+                                                             key="peopleScenario"
+                                                             defaultValue={this.state.peopleScenario}
+                                                             onChange={this.onSelectChange}>
+                                                    {this.scenarioOptions()}
+                                                </FormControl>
+                                            </Col>
+                                        </Form.Group>
+                                        </>
+                                    );
+                                }
+                            })()}
 
+                            <Row>
+                                <Col md={4} />
+                                <Col md={4} className="ops-label">
+                                    <label>Operations</label>
+                                </Col>
+                            </Row>
+                            <ModelParam controlId="minutesPerTest"
+                                        value={values.minutesPerTest}
+                                        onChange={handleChange}
+                                        label="minutes per test"
+                                        errors={errors.minutesPerTest}
+                            />
 
-                        {(() => {
-                            if (this.state.separateStudentsStaff) {
-                                // TODO: turn this into a proper component if it gets reused again
-                                return (
-                                    <>
-                                    <Form.Group as={Row} controlId="studentScenario">
-                                        <Col sm={4} />
-                                        <Col sm={4}>
-                                            <FormControl as="select"
-                                                         key="studentScenario"
-                                                         defaultValue={this.state.studentScenario}
-                                                         onChange={this.onSelectChange}>
-                                                {this.scenarioOptions()}
-                                            </FormControl>
-                                        </Col>
-                                        <Form.Label column sm={3}>(students)</Form.Label>
-                                    </Form.Group>
-                                    <Form.Group as={Row} controlId="staffScenario">
-                                        <Col sm={4} />
-                                        <Col sm={4}>
-                                            <FormControl as="select"
-                                                         key="staffScenario"
-                                                         defaultValue={this.state.staffScenario}
-                                                         onChange={this.onSelectChange}>
-                                                {this.scenarioOptions()}
-                                            </FormControl>
-                                        </Col>
-                                        <Form.Label column sm={3}>(staff)</Form.Label>
-                                    </Form.Group>
-                                    </>
-                                );
-                            } else {
-                                return (
-                                    <Form.Group as={Row} className="justify-content-center" controlId="peopleScenario">
-                                        <Col sm={4}>
-                                            <FormControl as="select"
-                                                         key="peopleScenario"
-                                                         defaultValue={this.state.peopleScenario}
-                                                         onChange={this.onSelectChange}>
-                                                {this.scenarioOptions()}
-                                            </FormControl>
-                                        </Col>
-                                    </Form.Group>
-                                );
-                            }
-                        })()}
-
-                        <Form.Group as={Row} className="justify-content-center" controlId="dayLength">
-                            <Col sm={4}>
-                                <FormControl as="select"
-                                             key="dayLength"
-                                             defaultValue={this.state.dayLength}
-                                             onChange={this.onSelectChange}>
-                                    {(() => {
-                                        let hours = Object.keys(DAYS).map(s => parseInt(s));
-                                        hours = hours.sort((a, b) => a - b);
-                                        return hours.map(hr => {
-                                            return <option key={hr} value={hr}>{hr}-hour day</option>;
-                                        });
-                                    })()}
-                                </FormControl>
-                            </Col>
-                        </Form.Group>
-                        <Form.Group as={Row} className="justify-content-center" controlId="simulateButton">
-                            <Col sm={4}>
-                                <Button variant="primary"
-                                        type="button"
-                                        className="simulate-button"
-                                        onClick={this.updateChart}>Simulate</Button>
-                            </Col>
-                        </Form.Group>
-                    </Form>
+                            <Form.Group as={Row} className="justify-content-center" controlId="dayLength">
+                                <Col md={4}>
+                                    <FormControl as="select"
+                                                 key="dayLength"
+                                                 defaultValue={this.state.dayLength}
+                                                 onChange={this.onSelectChange}>
+                                        {(() => {
+                                            let hours = Object.keys(DAYS).map(s => parseInt(s));
+                                            hours = hours.sort((a, b) => a - b);
+                                            return hours.map(hr => {
+                                                return <option key={hr} value={hr}>{hr}-hour day</option>;
+                                            });
+                                        })()}
+                                    </FormControl>
+                                </Col>
+                            </Form.Group>
+                            <Form.Group as={Row} className="justify-content-center" controlId="simulateButton">
+                                <Col md={4}>
+                                    <Button variant="primary"
+                                            type="submit"
+                                            className="simulate-button"
+                                            disabled={Object.entries(errors).length > 0 || isSubmitting || this.state.simRunning}>
+                                        {this.state.simRunning ? "Simulating..." : "Simulate"}
+                                    </Button>
+                                </Col>
+                            </Form.Group>
+                        </Form>
+                        )}
+                    </Formik>
                 </div>
             </Container>
         );

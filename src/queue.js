@@ -117,6 +117,5 @@ export const simulateMdc = function(lambdas, numStations, stepsPerTest, runs) {
             }
         }
     }
-    console.log(waitTimeHists);
     return waitTimeHists;
 }
