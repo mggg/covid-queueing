@@ -201,6 +201,12 @@ class WaitTimeChart extends React.Component {
         }
         maxTime = Math.min(Math.max(maxTime, MIN_WAIT), MAX_WAIT);
         unstable = (maxTime >= MAX_WAIT);
+        let maxMedianFormatted = Math.round(maxMedianTime);
+        if (maxMedianFormatted === 1) {
+            maxMedianFormatted += " minute";
+        } else {
+            maxMedianFormatted += " minutes";
+        }
 
         return (
             <>
@@ -320,7 +326,7 @@ class WaitTimeChart extends React.Component {
                   domain={[-10, 10]}
                   data={[{ x: steps + 10, y: maxMedianTime }]}
                   style={styles.maxMedianTimeScatter}
-                  labels={() => ["maximum wait", Math.round(maxMedianTime) + " minutes"]}
+                  labels={() => ["maximum wait", maxMedianFormatted]}
                   labelComponent={
                     <VictoryLabel
                         textAnchor="start"
