@@ -117,8 +117,8 @@ const ParamSchema = Yup.object().shape({
     minutesPerTest: Yup.number()
             .min(1, "A test should take at least one minute.")
             .max(30, "A test should take at most 30 minutes.")
-            .round()
-            .required("Must specify test length.")
+            .integer("Test duration should be an integer.")
+            .required("Must specify test duration.")
 });
 
 class WaitTimeInteractive extends React.Component {
