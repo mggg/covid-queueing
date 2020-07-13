@@ -66,6 +66,21 @@ const SCENARIOS = {
     'Mealtime rush hours (7x increase)': mealtimes(7),
 };
 const DEFAULT_SCENARIO = 'Mealtime rush hours (3x increase)';
+
+const DEFAULT_PARAMS = {
+    numPeople: 1500,
+    numStudents: 1200,
+    numStaff: 300,
+    numPeopleTestingStations: 30,
+    numStudentTestingStations: 22,
+    numStaffTestingStations: 8,
+    minutesPerTest: 8,
+    peopleScenario: DEFAULT_SCENARIO,
+    studentScenario: DEFAULT_SCENARIO,
+    staffScenario: DEFAULT_SCENARIO,
+    dayLength: DEFAULT_DAY,
+    separateStudentsStaff: false,
+};
 /* --- End constants --- */
 
 const ParamSchema = Yup.object().shape({
@@ -111,18 +126,7 @@ class WaitTimeInteractive extends React.Component {
         super(props);
         this.state = {
             // TODO: remove (don't duplicate!)
-            numPeople: 1500,
-            numStudents: 1200,
-            numStaff: 300,
-            numPeopleTestingStations: 30,
-            numStudentTestingStations: 22,
-            numStaffTestingStations: 8,
-            minutesPerTest: 8,
-            peopleScenario: DEFAULT_SCENARIO,
-            studentScenario: DEFAULT_SCENARIO,
-            staffScenario: DEFAULT_SCENARIO,
-            dayLength: DEFAULT_DAY,
-            separateStudentsStaff: false,
+            ...DEFAULT_PARAMS,
             simRunning: false,
         };
         this.updateChart = this.updateChart.bind(this);
@@ -211,6 +215,16 @@ class WaitTimeInteractive extends React.Component {
     }
 
     render() {
+        // TODO: This form is inconsistent---it uses Formik only for text fields
+        // and manually updates state for the checkbox and dropdowns. There is
+        // perhaps good reason to do this for the checkbox (it refreshes the
+        // chart, unlike the other inputs), but the real reason things are this
+        // way is that Formik was introduced *after* the initial version of
+        // the form.
+        //
+        // Thus, state associated with the text fields is updated only on submit,
+        // while other state is updated immediately. This shouldn't cause any
+        // real issues for now.
         return (
             <Container className="wait-time-interactive">
                 <div className="wait-time-chart">
@@ -236,15 +250,7 @@ class WaitTimeInteractive extends React.Component {
                 </div>
                 <div className="wait-time-params">
                     <Formik validationSchema={ParamSchema}
-                            initialValues={{
-                                numPeople: 1500,
-                                numStudents: 1200,
-                                numStaff: 300,
-                                numPeopleTestingStations: 30,
-                                numStudentTestingStations: 22,
-                                numStaffTestingStations: 8,
-                                minutesPerTest: 8
-                            }}
+                            initialValues={DEFAULT_PARAMS}
                             onSubmit={this.handleFormSubmit}>
                         {({
                             handleSubmit,
