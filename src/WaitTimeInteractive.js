@@ -14,10 +14,8 @@ import { simulateMdc, normalizedLambdas } from './queue';
 
 /* --- Start constants --- */
 /* Monte Carlo parameters */
-
-// TODO: this could be adaptive
-// (figure out time per sim and do N seconds' worth of simulation)
-const N_RUNS = 200; // number of Monte Carlo simulations
+const MIN_RUNS = 200; // minimum number of Monte Carlo simulations
+const TARGET_SAMPLES = 200000; // a sample is one person in one simulation
 
 /* Day lengths */
 const DAYS = {
@@ -184,18 +182,21 @@ class WaitTimeInteractive extends React.Component {
                 let scStaff = SCENARIOS[this.state.staffScenario];
                 let nStudentStations = parseInt(this.state.numStudentTestingStations);
                 let nStaffStations = parseInt(this.state.numStaffTestingStations);
+                let studentRuns = Math.max(MIN_RUNS, Math.round(TARGET_SAMPLES / nStudents));
+                let staffRuns = Math.max(MIN_RUNS, Math.round(TARGET_SAMPLES / nStaff));
 
                 let studentLambdas = normalizedLambdas(nStudents, scStudents, start, end, 1);
                 let staffLambdas = normalizedLambdas(nStaff, scStaff, start, end, 1);
-                let studentHists = simulateMdc(studentLambdas, nStudentStations, testLength, N_RUNS);
-                let staffHists = simulateMdc(staffLambdas, nStaffStations, testLength, N_RUNS);
+                let studentHists = simulateMdc(studentLambdas, nStudentStations, testLength, studentRuns);
+                let staffHists = simulateMdc(staffLambdas, nStaffStations, testLength, staffRuns);
                 this.setState({'studentHists': studentHists, 'staffHists': staffHists});
             } else {
                 let nPeople = parseInt(this.state.numPeople);
                 let nPeopleStations = parseInt(this.state.numPeopleTestingStations);
                 let scPeople = SCENARIOS[this.state.peopleScenario];
+                let peopleRuns = Math.max(MIN_RUNS, Math.round(TARGET_SAMPLES / nPeople));
                 let peopleLambdas = normalizedLambdas(nPeople, scPeople, start, end, 1);
-                let peopleHists = simulateMdc(peopleLambdas, nPeopleStations, testLength, N_RUNS);
+                let peopleHists = simulateMdc(peopleLambdas, nPeopleStations, testLength, peopleRuns);
                 this.setState({'peopleHists': peopleHists});
             }
             this.setState({'startTime': start, 'endTime': end});

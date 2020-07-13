@@ -166,8 +166,6 @@ class WaitTimeChart extends React.Component {
         } else if (window.innerWidth >= 768) {
             chartWidth = 475;
         }
-        console.log("window width:", window.innerWidth);
-        console.log("chart width:", chartWidth);
         this.setState({'width': chartWidth});
     }
 
