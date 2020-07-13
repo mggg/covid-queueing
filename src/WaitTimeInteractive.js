@@ -78,24 +78,24 @@ const DEFAULT_PARAMS = {
     peopleScenario: DEFAULT_SCENARIO,
     studentScenario: DEFAULT_SCENARIO,
     staffScenario: DEFAULT_SCENARIO,
-    dayLength: DEFAULT_DAY,
-    separateStudentsStaff: false,
+    dayLength: DEFAULT_DAY
 };
+
 /* --- End constants --- */
 
 const ParamSchema = Yup.object().shape({
     numStudents: Yup.number()
-            .min(0, "Number of students must be positive.")
+            .min(25, "Must test at least 25 students.")
             .max(20000, "Only 20,000 students allowed per day.")
             .integer("Number of students must be an integer.")
             .required("Number of students is required."),
     numStaff: Yup.number()
-            .min(0, "Number of staff members must be positive.")
+            .min(25, "Must test at least 25 staff members.")
             .max(20000, "Only 20,000 staff members allowed per day.")
             .integer("Number of staff members must be an integer.")
             .required("Number of staff members is required."),
     numPeople: Yup.number()
-            .min(0, "Number of people must be positive.")
+            .min(50, "Must test at least 50 people.")
             .max(40000, "Only 40,000 people allowed per day.")
             .integer("Number of people must be an integer.")
             .required("Number of people is required."),
@@ -125,14 +125,13 @@ class WaitTimeInteractive extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            // TODO: remove (don't duplicate!)
             ...DEFAULT_PARAMS,
-            simRunning: false,
+            separateStudentsStaff: false,
+            simRunning: false
         };
         this.updateChart = this.updateChart.bind(this);
         this.onSeparationChange = this.onSeparationChange.bind(this);
         this.onParamChange = this.onParamChange.bind(this);
-        this.onSelectChange = this.onSelectChange.bind(this);
         this.handleFormSubmit = this.handleFormSubmit.bind(this);
     }
 
@@ -157,10 +156,6 @@ class WaitTimeInteractive extends React.Component {
         this.setState({ [e.target.id]: e.target.value });
     }
 
-    onSelectChange(e) {
-        this.setState({ [e.target.id]: e.target.value });
-    } 
-
     componentDidMount() {
         this.updateChart();
     }
@@ -178,8 +173,9 @@ class WaitTimeInteractive extends React.Component {
 
     updateChart() {
         return new Promise((resolve, reject) => {
-            let start = DAYS[this.state.dayLength]['start'];
-            let end = DAYS[this.state.dayLength]['end'];
+            let dayLength = parseInt(this.state.dayLength);
+            let start = DAYS[dayLength]['start'];
+            let end = DAYS[dayLength]['end'];
             let testLength = parseInt(this.state.minutesPerTest);
             if (this.state.separateStudentsStaff === true) {
                 let nStudents = parseInt(this.state.numStudents);
@@ -215,23 +211,15 @@ class WaitTimeInteractive extends React.Component {
     }
 
     render() {
-        // TODO: This form is inconsistent---it uses Formik only for text fields
-        // and manually updates state for the checkbox and dropdowns. There is
-        // perhaps good reason to do this for the checkbox (it refreshes the
-        // chart, unlike the other inputs), but the real reason things are this
-        // way is that Formik was introduced *after* the initial version of
-        // the form.
-        //
-        // Thus, state associated with the text fields is updated only on submit,
-        // while other state is updated immediately. This shouldn't cause any
-        // real issues for now.
+        // NOTE: The state of the separateStudentsStaff checkbox is handled
+        // separately from the rest of the form.
         return (
             <Container className="wait-time-interactive">
                 <div className="wait-time-chart">
                     {(() => {
                         if (this.state.simRunning) {
                             return (
-                                <div class="wait-time-progress">
+                                <div className="wait-time-progress">
                                     <ProgressBar animated now={100} />
                                 </div>
                             );
@@ -298,8 +286,8 @@ class WaitTimeInteractive extends React.Component {
                                             <Col md={4}>
                                                 <FormControl as="select"
                                                              key="studentScenario"
-                                                             defaultValue={this.state.studentScenario}
-                                                             onChange={this.onSelectChange}>
+                                                             value={values.studentScenario}
+                                                             onChange={handleChange}>
                                                     {this.scenarioOptions()}
                                                 </FormControl>
                                             </Col>
@@ -328,8 +316,8 @@ class WaitTimeInteractive extends React.Component {
                                             <Col md={4}>
                                                 <FormControl as="select"
                                                              key="staffScenario"
-                                                             defaultValue={this.state.staffScenario}
-                                                             onChange={this.onSelectChange}>
+                                                             value={values.staffScenario}
+                                                             onChange={handleChange}>
                                                     {this.scenarioOptions()}
                                                 </FormControl>
                                             </Col>
@@ -361,8 +349,8 @@ class WaitTimeInteractive extends React.Component {
                                             <Col md={4}>
                                                 <FormControl as="select"
                                                              key="peopleScenario"
-                                                             defaultValue={this.state.peopleScenario}
-                                                             onChange={this.onSelectChange}>
+                                                            value={values.peopleScenario}
+                                                             onChange={handleChange}>
                                                     {this.scenarioOptions()}
                                                 </FormControl>
                                             </Col>
@@ -389,8 +377,8 @@ class WaitTimeInteractive extends React.Component {
                                 <Col md={4}>
                                     <FormControl as="select"
                                                  key="dayLength"
-                                                 defaultValue={this.state.dayLength}
-                                                 onChange={this.onSelectChange}>
+                                                 value={values.dayLength}
+                                                 onChange={handleChange}>
                                         {(() => {
                                             let hours = Object.keys(DAYS).map(s => parseInt(s));
                                             hours = hours.sort((a, b) => a - b);

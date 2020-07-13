@@ -20,9 +20,8 @@ export const smooth = function(signal, win) {
     let smoothLength = signal.length - (2 * offset);
     let smoothed = Array(smoothLength);
     for (let ts = 0; ts < smoothLength; ts++) {
-        // TODO: handle null values if necessary
-        let sub = signal.slice(ts, ts + (2 * offset) + 1);
-        smoothed[ts] = sub.reduce((a, b) => parseInt(a) + parseInt(b)) / win;
+        let sub = signal.slice(ts, ts + (2 * offset) + 1).filter(x => x !== null);
+        smoothed[ts] = sub.reduce((a, b) => parseInt(a) + parseInt(b)) / sub.length;
     }
     return smoothed;
 }

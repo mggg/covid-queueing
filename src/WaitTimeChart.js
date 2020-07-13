@@ -11,6 +11,7 @@ const RED = '#d1352b';  // red from Districtr
 const GREEN = '#87ca3f'; // lightish green modified from Districtr
 const STROKE_WIDTH = 4;
 const FONT = "'HK Grotesk', Helvetica, sans-serif";
+const MOBILE_WIDTH = 325;
 
 const PERCENTILES = [1, 5, 20, 50, 80, 95, 99];
 const BAND_ALPHAS = [0.2, 0.35, 0.52, 0.52, 0.35, 0.2];
@@ -21,7 +22,11 @@ const MAX_WAIT = 120;
 class WaitTimeChart extends React.Component {
     constructor(props) {
         super(props);
+        this.state = {
+            width: 0
+        };
         this.getTicks = this.getTicks.bind(this);
+        this.updateWidth = this.updateWidth.bind(this);
     }
 
     bandsData = memoize((hists) => {
@@ -36,7 +41,7 @@ class WaitTimeChart extends React.Component {
             let percentiles = hists.map(h => histPercentiles(h, PERCENTILES));
             let percentilesSmoothed = Array(PERCENTILES.length);
             for (let idx = 0; idx < PERCENTILES.length; idx++) {
-                let percentileData = percentiles.map(p => p[idx]);
+                let percentileData = percentiles.map(p => p === null ? null : p[idx]);
                 let smoothed = smooth(percentileData, SMOOTH_WINDOW);
                 percentilesSmoothed[idx] = smoothed;
                 if (PERCENTILES[idx] === 50) {
@@ -75,10 +80,18 @@ class WaitTimeChart extends React.Component {
                 axis: { stroke: "black", strokeWidth: 1 },
                 ticks: {
                     size: ({ tick }) => {
-                        if (tick % 60 === 0) {
-                            return 10;
-                        } else if (tick % 15 === 0) {
-                            return 5;
+                        if (this.state.width > MOBILE_WIDTH) {
+                            if (tick % 60 === 0) {
+                                return 10;
+                            } else if (tick % 15 === 0) {
+                                return 5;
+                            }
+                        } else {
+                            if (tick % 120 === 0) {
+                                return 10;
+                            } else if (tick % 30 === 0) {
+                                return 5;
+                            }
                         }
                         return 0;
                     },
@@ -146,6 +159,23 @@ class WaitTimeChart extends React.Component {
         };
     }
 
+    updateWidth() {
+        let chartWidth = MOBILE_WIDTH;
+        if (window.innerWidth >= 992) {
+            chartWidth = 625;
+        } else if (window.innerWidth >= 768) {
+            chartWidth = 475;
+        }
+        console.log("window width:", window.innerWidth);
+        console.log("chart width:", chartWidth);
+        this.setState({'width': chartWidth});
+    }
+
+    componentDidMount() {
+        this.updateWidth();
+        window.addEventListener('resize', this.updateWidth);
+    }
+
     getTicks() {
         if (this.props.startTime !== undefined && this.props.endTime !== undefined) {
             let resMs = 60 * 1000;
@@ -155,11 +185,12 @@ class WaitTimeChart extends React.Component {
         return [];
     }
 
-    shouldComponentUpdate(nextProps) {
+    shouldComponentUpdate(nextProps, nextState) {
         return ((this.props.separateStudentsStaff !== nextProps.separateStudentsStaff) ||
                 (this.props.peopleHists !== nextProps.peopleHists) ||
                 (this.props.studentHists !== nextProps.studentHists) ||
-                (this.props.staffHists !== nextProps.staffHists));
+                (this.props.staffHists !== nextProps.staffHists) ||
+                (this.state.width !== nextState.width));
     }
 
     render() {
@@ -210,7 +241,7 @@ class WaitTimeChart extends React.Component {
 
         return (
             <>
-            <VictoryChart width={550} height={225} domain={{y: [0, maxTime]}}>
+            <VictoryChart width={this.state.width} height={250} domain={{y: [0, maxTime]}}>
                 {(() => {
                     if (this.props.separateStudentsStaff === true) {
                         return [(
@@ -323,7 +354,7 @@ class WaitTimeChart extends React.Component {
                              ]}
                 />
                 <VictoryScatter
-                  domain={[-10, 10]}
+                  size={0}
                   data={[{ x: steps + 10, y: maxMedianTime }]}
                   style={styles.maxMedianTimeScatter}
                   labels={() => ["maximum wait", maxMedianFormatted]}
@@ -336,7 +367,7 @@ class WaitTimeChart extends React.Component {
                     />
                   }
                 />
-                <VictoryLabel x={250} y={215}
+                <VictoryLabel x={this.state.width / 2 - 24} y={240}
                               text="Arrival time"
                               style={styles.axisLabel}
                 />
@@ -354,7 +385,8 @@ class WaitTimeChart extends React.Component {
                     tickValues={ticks}
                     tickFormat={
                       (x) => {
-                          if (x % 60 === 0) {
+                          if ((x % 60 === 0 && this.state.width > MOBILE_WIDTH) ||
+                              (x % 120 === 0)) {
                               let date = new Date(new Date(this.props.startTime).getTime() +
                                                   (x * 60 * 1000));
                               let formatted = date.toLocaleTimeString('en-US',

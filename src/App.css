@@ -114,6 +114,12 @@
     }
 }
 
+@media only screen and (max-width: 576px) {
+    .info p, .info h2 {
+        margin: 1rem 1.5rem;
+    }
+}
+
 .info a {
     color: #006b9c;
 }
