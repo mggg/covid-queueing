@@ -11,7 +11,7 @@ const RED = '#d1352b';  // red from Districtr
 const GREEN = '#87ca3f'; // lightish green modified from Districtr
 const STROKE_WIDTH = 4;
 const FONT = "'HK Grotesk', Helvetica, sans-serif";
-const MOBILE_WIDTH = 325;
+const MOBILE_WIDTH = 300;
 
 const PERCENTILES = [1, 5, 20, 50, 80, 95, 99];
 const BAND_ALPHAS = [0.2, 0.35, 0.52, 0.52, 0.35, 0.2];
@@ -129,12 +129,12 @@ class WaitTimeChart extends React.Component {
                 {
                     fill: "black",
                     fontFamily: FONT,
-                    fontSize: 7
+                    fontSize: 7.25
                 },
                 {
                     fill: "black",
                     fontFamily: FONT,
-                    fontSize: 7,
+                    fontSize: 7.25,
                     fontWeight: 500
                 }
             ],
@@ -357,7 +357,10 @@ class WaitTimeChart extends React.Component {
                   size={0}
                   data={[{ x: steps + 10, y: maxMedianTime }]}
                   style={styles.maxMedianTimeScatter}
-                  labels={() => ["maximum wait", maxMedianFormatted]}
+                  labels={() => [
+                      this.state.width > MOBILE_WIDTH ? "maximum wait" : "max. wait",
+                      maxMedianFormatted
+                  ]}
                   labelComponent={
                     <VictoryLabel
                         textAnchor="start"
