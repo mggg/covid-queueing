@@ -1,6 +1,6 @@
 import React from 'react'
 import Alert from 'react-bootstrap/Alert'
-import { VictoryChart, VictoryLabel, VictoryLegend, VictoryGroup,
+import { VictoryChart, VictoryLabel, VictoryLegend, VictoryGroup, VictoryContainer,
         VictoryLine, VictoryArea, VictoryAxis, VictoryScatter } from 'victory'
 import memoize from 'fast-memoize'
 import { histPercentiles, smooth } from './queue'
@@ -239,9 +239,24 @@ class WaitTimeChart extends React.Component {
             maxMedianFormatted += " minutes";
         }
 
+        // scrolling on mobile:
+        // https://github.com/FormidableLabs/victory/issues/1037#issuecomment-623048143
         return (
             <>
-            <VictoryChart width={this.state.width} height={250} domain={{y: [0, maxTime]}}>
+            <VictoryChart
+                width={this.state.width}
+                height={250}
+                domain={{y: [0, maxTime]}}
+                containerComponent={
+                    <VictoryContainer
+                      style={{
+                        pointerEvents: "auto",
+                        userSelect: "auto",
+                        touchAction: "auto"
+                      }}
+                    />
+                }
+            >
                 {(() => {
                     if (this.props.separateStudentsStaff === true) {
                         return [(

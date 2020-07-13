@@ -81,18 +81,6 @@
     background-color: #2b6b98;
 }*/
 
-/*
- * Mobile scrolling:
- * https://github.com/FormidableLabs/victory/issues/1430#issuecomment-580456258
- */.
-@media only screen and (max-width: 600px) {
-    .VictoryContainer {
-        user-select: auto !important;
-        pointer-events: auto !important;
-        touch-action: auto !important;
-    }
-}
-
 /*** Info text ***/
 .info {
     background-color: #f9f9f9;
