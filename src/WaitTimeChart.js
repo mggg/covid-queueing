@@ -316,7 +316,7 @@ class WaitTimeChart extends React.Component {
                                     </VictoryGroup>
                                 );
                             }),
-                            (<VictoryLegend x={210} y={12}
+                            (<VictoryLegend x={this.state.width / 2 - 60} y={14}
                               orientation="horizontal"
                               gutter={20}
                               style={styles.legend}
